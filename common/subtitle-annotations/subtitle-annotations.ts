@@ -117,6 +117,51 @@ function shouldUseLemmasGroupingKey(source: DictionaryTokenSource | undefined, d
     return strategy === TokenMatchStrategy.ANY_FORM_COLLECTED || strategy === TokenMatchStrategy.LEMMA_FORM_COLLECTED;
 }
 
+/**
+ * Describes how lemmasForScript() and getAnyFormStatusResults() filter based on the dictionaryMatchAcrossScripts setting:
+ * If the tokens between subtitles and collection don't ever contain kana (not Japanese) then these checks do nothing.
+ * This feature (and multiple lemmas) currently only apply to Japanese but could be expanded for other languages.
+ *
+ * if dictionaryMatchAcrossScripts:
+ *   - Kana subtitles can match kanji in collection, could be homophones but text processing can't handle it so we allow it.
+ *   - Kanji subtitles only match with kanji in collection, prevents kana collected matches all kanji homophones.
+ * if not dictionaryMatchAcrossScripts:
+ *   - Never match across scripts, downside is if kanji is collected kana will need to be collected too.
+ *   - Essentially a strict mode where the user needs to collect all script forms of a word.
+ */
+async function lemmatizeForScript(trimmedToken: string, ts: TrackState): Promise<string[] | undefined> {
+    const lemmas = await ts.yt!.lemmatize(trimmedToken);
+    return lemmas === undefined ? undefined : lemmasForScript(trimmedToken, lemmas, ts.dt);
+}
+function lemmasForScript(trimmedToken: string, lemmas: string[], dt: DictionaryTrack): string[] {
+    const tokenIsKanaOnly = isKanaOnly(trimmedToken);
+    if (tokenIsKanaOnly && dt.dictionaryMatchAcrossScripts) return lemmas;
+    return lemmas.filter((lemma) => isKanaOnly(lemma) === tokenIsKanaOnly);
+}
+function getAnyFormStatusResults(
+    trimmedToken: string,
+    lemmas: string[],
+    ts: TrackState,
+    sourceMatches: (source: DictionaryTokenSource) => boolean
+): TokenStatusResult[] {
+    const anyFormStatusResults: TokenStatusResult[] = [];
+    for (const lemma of lemmas) {
+        const statusResults = ts.collectedAnyForm.get(lemma);
+        if (!statusResults) continue;
+        for (const statusResult of statusResults) {
+            if (!sourceMatches(statusResult.source)) continue;
+            const tokenIsKanaOnly = isKanaOnly(trimmedToken);
+            const collectedTokenIsKanaOnly = isKanaOnly(statusResult.token!);
+            if (ts.dt.dictionaryMatchAcrossScripts) {
+                if (tokenIsKanaOnly || !collectedTokenIsKanaOnly) anyFormStatusResults.push(statusResult);
+            } else {
+                if (tokenIsKanaOnly === collectedTokenIsKanaOnly) anyFormStatusResults.push(statusResult);
+            }
+        }
+    }
+    return anyFormStatusResults;
+}
+
 function groupingKeysForToken(
     trimmedToken: string,
     lemmas: string[],
@@ -125,8 +170,9 @@ function groupingKeysForToken(
 ): { groupingKey: string; lemmasGroupingKey?: string } {
     const groupingKey = trimmedToken;
     let lemmasGroupingKey: string | undefined;
-    if (lemmas.length && shouldUseLemmasGroupingKey(source, dt)) {
-        lemmasGroupingKey = `${JSON.stringify(Array.from(new Set(lemmas)).sort())}`;
+    const groupingLemmas = lemmasForScript(trimmedToken, lemmas, dt);
+    if (groupingLemmas.length && shouldUseLemmasGroupingKey(source, dt)) {
+        lemmasGroupingKey = `${JSON.stringify(Array.from(new Set(groupingLemmas)).sort())}`;
     }
     return { groupingKey, lemmasGroupingKey };
 }
@@ -1213,7 +1259,7 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
                         .trim();
                     if (shouldQueryExactForm && !ts.collectedExactForm.has(token)) forExactFormQuery.add(token);
                     if (shouldQueryLemmaForm || shouldQueryAnyForm) {
-                        const lemmas = (await this._lemmasForScript(token, ts)) ?? [];
+                        const lemmas = (await lemmatizeForScript(token, ts)) ?? [];
                         if (shouldQueryLemmaForm) {
                             for (const lemma of lemmas) {
                                 if (!ts.collectedLemmaForm.has(lemma)) forLemmaFormQuery.add(lemma);
@@ -1590,48 +1636,6 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
         return tokenStatusResult;
     }
 
-    /**
-     * Describes how lemmasForScript() and anyFormStatusResults() filter based on the dictionaryMatchAcrossScripts setting:
-     * If the tokens between subtitles and collection don't ever contain kana (not Japanese) then these checks do nothing.
-     * This feature (and multiple lemmas) currently only apply to Japanese but could be expanded for other languages.
-     *
-     * if dictionaryMatchAcrossScripts:
-     *   - Kana subtitles can match kanji in collection, could be homophones but text processing can't handle it so we allow it.
-     *   - Kanji subtitles only match with kanji in collection, prevents kana collected matches all kanji homophones.
-     * if not dictionaryMatchAcrossScripts:
-     *   - Never match across scripts, downside is if kanji is collected kana will need to be collected too.
-     *   - Essentially a strict mode where the user needs to collect all script forms of a word.
-     */
-    private async _lemmasForScript(trimmedToken: string, ts: TrackState): Promise<string[] | undefined> {
-        const lemmas = await ts.yt!.lemmatize(trimmedToken);
-        const tokenIsKanaOnly = isKanaOnly(trimmedToken);
-        if (tokenIsKanaOnly && ts.dt.dictionaryMatchAcrossScripts) return lemmas;
-        return lemmas?.filter((lemma) => isKanaOnly(lemma) === tokenIsKanaOnly);
-    }
-    private _anyFormStatusResults(
-        trimmedToken: string,
-        lemmas: string[],
-        ts: TrackState,
-        sourceMatches: (source: DictionaryTokenSource) => boolean
-    ): TokenStatusResult[] {
-        const anyFormStatusResults: TokenStatusResult[] = [];
-        for (const lemma of lemmas) {
-            const statusResults = ts.collectedAnyForm.get(lemma);
-            if (!statusResults) continue;
-            for (const statusResult of statusResults) {
-                if (!sourceMatches(statusResult.source)) continue;
-                const tokenIsKanaOnly = isKanaOnly(trimmedToken);
-                const collectedTokenIsKanaOnly = isKanaOnly(statusResult.token!);
-                if (ts.dt.dictionaryMatchAcrossScripts) {
-                    if (tokenIsKanaOnly || !collectedTokenIsKanaOnly) anyFormStatusResults.push(statusResult);
-                } else {
-                    if (tokenIsKanaOnly === collectedTokenIsKanaOnly) anyFormStatusResults.push(statusResult);
-                }
-            }
-        }
-        return anyFormStatusResults;
-    }
-
     private async _handlePriorityExact(
         trimmedToken: string,
         ts: TrackState
@@ -1643,7 +1647,7 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             }
         }
         if (shouldUseLemmaForm(ts.dt.dictionaryTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
             const lemmaStatusResults: TokenStatusResult[] = [];
@@ -1656,10 +1660,10 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             if (lemmaStatusResults.length) return combineTokenStatusResults(lemmaStatusResults);
         }
         if (shouldUseAnyForm(ts.dt.dictionaryTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
-            const anyFormStatusResults = this._anyFormStatusResults(
+            const anyFormStatusResults = getAnyFormStatusResults(
                 trimmedToken,
                 lemmas,
                 ts,
@@ -1678,7 +1682,7 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             if (tokenStatusResult?.source === DictionaryTokenSource.ANKI_SENTENCE) return tokenStatusResult;
         }
         if (shouldUseLemmaForm(ts.dt.dictionaryAnkiSentenceTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
             const lemmaStatusResults: TokenStatusResult[] = [];
@@ -1691,10 +1695,10 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             if (lemmaStatusResults.length) return combineTokenStatusResults(lemmaStatusResults);
         }
         if (shouldUseAnyForm(ts.dt.dictionaryAnkiSentenceTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
-            const anyFormStatusResults = this._anyFormStatusResults(
+            const anyFormStatusResults = getAnyFormStatusResults(
                 trimmedToken,
                 lemmas,
                 ts,
@@ -1716,7 +1720,7 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
         ts: TrackState
     ): Promise<ResolvedTokenStatusResult | null> {
         if (shouldUseLemmaForm(ts.dt.dictionaryTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
             const lemmaStatusResults: TokenStatusResult[] = [];
@@ -1735,10 +1739,10 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             }
         }
         if (shouldUseAnyForm(ts.dt.dictionaryTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
-            const anyFormStatusResults = this._anyFormStatusResults(
+            const anyFormStatusResults = getAnyFormStatusResults(
                 trimmedToken,
                 lemmas,
                 ts,
@@ -1753,7 +1757,7 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             }
         }
         if (shouldUseLemmaForm(ts.dt.dictionaryAnkiSentenceTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
             const lemmaStatusResults: TokenStatusResult[] = [];
@@ -1770,10 +1774,10 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             if (tokenStatusResult?.source === DictionaryTokenSource.ANKI_SENTENCE) return tokenStatusResult;
         }
         if (shouldUseAnyForm(ts.dt.dictionaryAnkiSentenceTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
-            const anyFormStatusResults = this._anyFormStatusResults(
+            const anyFormStatusResults = getAnyFormStatusResults(
                 trimmedToken,
                 lemmas,
                 ts,
@@ -1804,7 +1808,7 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             }
         }
         if (shouldUseLemmaForm(ts.dt.dictionaryTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
             for (const lemma of lemmas) {
@@ -1815,11 +1819,11 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             }
         }
         if (shouldUseAnyForm(ts.dt.dictionaryTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
             tokenStatusResults.push(
-                ...this._anyFormStatusResults(
+                ...getAnyFormStatusResults(
                     trimmedToken,
                     lemmas,
                     ts,
@@ -1836,7 +1840,7 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             }
         }
         if (shouldUseLemmaForm(ts.dt.dictionaryAnkiSentenceTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
             for (const lemma of lemmas) {
@@ -1847,11 +1851,11 @@ export class SubtitleAnnotations extends SubtitleCollection<RichSubtitleModel> {
             }
         }
         if (shouldUseAnyForm(ts.dt.dictionaryAnkiSentenceTokenMatchStrategy)) {
-            const lemmas = await this._lemmasForScript(trimmedToken, ts);
+            const lemmas = await lemmatizeForScript(trimmedToken, ts);
             if (this.shouldCancelBuild) return null;
             if (!lemmas) return null;
             tokenStatusResults.push(
-                ...this._anyFormStatusResults(
+                ...getAnyFormStatusResults(
                     trimmedToken,
                     lemmas,
                     ts,
