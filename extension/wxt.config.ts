@@ -114,6 +114,7 @@ export default defineConfig({
                         'video-data-sync-ui.js',
                         'video-select-ui.js',
                         'notification-ui.js',
+                        'llm-explanation-ui.js',
                         'mobile-video-overlay-ui.html',
                         'statistics-overlay-ui.html',
                         'statistics-overlay-one-uncollected-ui.html',

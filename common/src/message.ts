@@ -124,9 +124,61 @@ export interface ExplainSubtitleWithLlmMessage extends Message {
 export interface ExplainSubtitleWithLlmResponse {
     readonly ok: boolean;
     readonly error?: string;
+    readonly explanations?: LlmPhraseExplanation[];
+    readonly model?: string;
+}
+
+export interface SaveLlmExplanationsMessage extends Message {
+    readonly command: 'save-llm-explanations';
+    readonly explanations: LlmPhraseExplanation[];
+    readonly subtitle: string;
+    readonly sourceUrl?: string;
+    readonly sourceTitle?: string;
+    readonly timestampMs?: number;
+    readonly model: string;
+}
+
+export interface SaveLlmExplanationsResponse {
+    readonly ok: boolean;
+    readonly error?: string;
     readonly savedCount?: number;
     readonly skippedCount?: number;
-    readonly explanations?: LlmPhraseExplanation[];
+    readonly errors?: string[];
+}
+
+export interface LlmExplanationUiState {
+    readonly themeType: 'dark' | 'light';
+    readonly subtitle: string;
+    readonly context: string;
+    readonly sourceTitle?: string;
+    readonly sourceUrl?: string;
+    readonly timestampMs?: number;
+    readonly model: string;
+    readonly loading: boolean;
+    readonly error?: string;
+    readonly explanations: LlmPhraseExplanation[];
+    readonly saving: boolean;
+    readonly savedCount?: number;
+    readonly errors?: string[];
+}
+
+export interface ShowLlmExplanationUiMessage extends Message {
+    readonly command: 'showLlmExplanationUi';
+    readonly state: LlmExplanationUiState;
+}
+
+export interface UpdateLlmExplanationUiStateMessage extends Message {
+    readonly command: 'updateLlmExplanationUiState';
+    readonly state: Partial<LlmExplanationUiState>;
+}
+
+export interface LlmExplanationUiBridgeSaveMessage extends Message {
+    readonly command: 'llm-explanation-save';
+    readonly explanations: LlmPhraseExplanation[];
+}
+
+export interface LlmExplanationUiBridgeCloseMessage extends Message {
+    readonly command: 'llm-explanation-close';
 }
 
 export interface EncodeMp3Message extends MessageWithId {

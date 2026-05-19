@@ -10,6 +10,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
+import { useTranslation } from 'react-i18next';
 import SettingsTextField from './SettingsTextField';
 import SettingsSection from './SettingsSection';
 import { AsbplayerSettings, LlmObsidianNoteMode } from '../settings';
@@ -20,6 +21,7 @@ interface Props {
 }
 
 const LlmSettingsTab: React.FC<Props> = ({ settings, onSettingChanged }) => {
+    const { t } = useTranslation();
     const {
         llmEnabled,
         llmOpenRouterApiKey,
@@ -46,14 +48,12 @@ const LlmSettingsTab: React.FC<Props> = ({ settings, onSettingChanged }) => {
 
     return (
         <Stack spacing={3}>
-            <SettingsSection>AI / Japanese</SettingsSection>
+            <SettingsSection>{t('settings.llm')}</SettingsSection>
             <Typography variant="body2" color="text.secondary">
-                Press the configured keybind on the current subtitle to send it to an OpenRouter model. Returned phrases
-                are saved as Markdown notes in your Obsidian vault via the{' '}
+                {t('settings.llmDescription')}{' '}
                 <Link href="https://github.com/coddingtonbear/obsidian-local-rest-api" target="_blank" rel="noreferrer">
-                    Local REST API plugin
+                    obsidian-local-rest-api
                 </Link>
-                .
             </Typography>
 
             <FormGroup>
@@ -64,13 +64,13 @@ const LlmSettingsTab: React.FC<Props> = ({ settings, onSettingChanged }) => {
                             onChange={(e) => onSettingChanged('llmEnabled', e.target.checked)}
                         />
                     }
-                    label="Enable AI subtitle explanations"
+                    label={t('settings.llmEnabled')}
                 />
             </FormGroup>
 
-            <SettingsSection>OpenRouter</SettingsSection>
+            <SettingsSection>{t('settings.llmOpenRouter')}</SettingsSection>
             <SettingsTextField
-                label="API key"
+                label={t('settings.llmOpenRouterApiKey')}
                 type={showOpenRouterKey ? 'text' : 'password'}
                 value={llmOpenRouterApiKey}
                 onChange={set('llmOpenRouterApiKey')}
@@ -92,36 +92,36 @@ const LlmSettingsTab: React.FC<Props> = ({ settings, onSettingChanged }) => {
                 }}
             />
             <SettingsTextField
-                label="Model"
+                label={t('settings.llmOpenRouterModel')}
                 value={llmOpenRouterModel}
                 onChange={set('llmOpenRouterModel')}
-                helperText="e.g. anthropic/claude-sonnet-4.7, anthropic/claude-haiku-4.5, google/gemini-2.5-flash"
+                helperText={t('settings.llmOpenRouterModelHelperText')}
             />
             <SettingsTextField
-                label="System prompt"
+                label={t('settings.llmSystemPrompt')}
                 multiline
                 minRows={4}
                 value={llmSystemPrompt}
                 onChange={set('llmSystemPrompt')}
             />
             <SettingsTextField
-                label="User prompt template"
+                label={t('settings.llmUserPromptTemplate')}
                 multiline
                 minRows={3}
                 value={llmUserPromptTemplate}
                 onChange={set('llmUserPromptTemplate')}
-                helperText="Placeholders: {{subtitle}}, {{context}}"
+                helperText={t('settings.llmUserPromptTemplateHelperText')}
             />
 
-            <SettingsSection>Obsidian (Local REST API)</SettingsSection>
+            <SettingsSection>{t('settings.llmObsidian')}</SettingsSection>
             <SettingsTextField
-                label="Base URL"
+                label={t('settings.llmObsidianRestUrl')}
                 value={llmObsidianRestUrl}
                 onChange={set('llmObsidianRestUrl')}
-                helperText="https://127.0.0.1:27124 (HTTPS, self-signed) or http://127.0.0.1:27123 (insecure mode)"
+                helperText={t('settings.llmObsidianRestUrlHelperText')}
             />
             <SettingsTextField
-                label="API key"
+                label={t('settings.llmObsidianApiKey')}
                 type={showObsidianKey ? 'text' : 'password'}
                 value={llmObsidianApiKey}
                 onChange={set('llmObsidianApiKey')}
@@ -143,26 +143,32 @@ const LlmSettingsTab: React.FC<Props> = ({ settings, onSettingChanged }) => {
                 }}
             />
             <SettingsTextField
-                label="Vault name (informational)"
+                label={t('settings.llmObsidianVault')}
                 value={llmObsidianVault}
                 onChange={set('llmObsidianVault')}
-                helperText="Local REST API writes to the currently open vault; this is for record only."
+                helperText={t('settings.llmObsidianVaultHelperText')}
             />
             <SettingsTextField
                 select
-                label="Note mode"
+                label={t('settings.llmObsidianNoteMode')}
                 value={llmObsidianNoteMode}
                 onChange={(e) => onSettingChanged('llmObsidianNoteMode', e.target.value as LlmObsidianNoteMode)}
             >
-                <MenuItem value={LlmObsidianNoteMode.notePerPhrase}>One note per phrase</MenuItem>
-                <MenuItem value={LlmObsidianNoteMode.dailyNoteAppend}>Append to daily note</MenuItem>
-                <MenuItem value={LlmObsidianNoteMode.singleRollingNote}>Append to single rolling note</MenuItem>
+                <MenuItem value={LlmObsidianNoteMode.notePerPhrase}>
+                    {t('settings.llmObsidianNoteModeNotePerPhrase')}
+                </MenuItem>
+                <MenuItem value={LlmObsidianNoteMode.dailyNoteAppend}>
+                    {t('settings.llmObsidianNoteModeDailyNoteAppend')}
+                </MenuItem>
+                <MenuItem value={LlmObsidianNoteMode.singleRollingNote}>
+                    {t('settings.llmObsidianNoteModeSingleRollingNote')}
+                </MenuItem>
             </SettingsTextField>
             <SettingsTextField
-                label="Path template"
+                label={t('settings.llmObsidianPathTemplate')}
                 value={llmObsidianPathTemplate}
                 onChange={set('llmObsidianPathTemplate')}
-                helperText="Placeholders: {{date}}, {{datetime}}, {{slug}}, {{phrase}}. Applies to note-per-phrase mode."
+                helperText={t('settings.llmObsidianPathTemplateHelperText')}
             />
         </Stack>
     );

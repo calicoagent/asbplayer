@@ -1,6 +1,4 @@
 import {
-    ExplainSubtitleWithLlmMessage,
-    ExplainSubtitleWithLlmResponse,
     OpenStatisticsMessage,
     PlayMode,
     SettingsUpdatedMessage,
@@ -278,32 +276,13 @@ export default class KeyBindings {
                     .map((s) => s.text)
                     .join(' ⏎ ');
 
-                const command: VideoToExtensionCommand<ExplainSubtitleWithLlmMessage> = {
-                    sender: 'asbplayer-video',
-                    message: {
-                        command: 'explain-subtitle-with-llm',
-                        subtitle: currentSubtitle.text,
-                        context: ctxText,
-                        sourceUrl: window.location.href,
-                        sourceTitle: document.title,
-                        timestampMs: Date.now(),
-                    },
-                    src: context.video.src,
-                };
-
-                browser.runtime
-                    .sendMessage(command)
-                    .then((res: ExplainSubtitleWithLlmResponse | undefined) => {
-                        if (!res) return;
-                        if (res.ok) {
-                            console.info(
-                                `[asbplayer-llm] saved ${res.savedCount} / skipped ${res.skippedCount} phrase(s)`
-                            );
-                        } else {
-                            console.error('[asbplayer-llm]', res.error);
-                        }
-                    })
-                    .catch((e) => console.error('[asbplayer-llm]', e));
+                void context.llmExplanationUiController.show({
+                    subtitle: currentSubtitle.text,
+                    context: ctxText,
+                    sourceUrl: window.location.href,
+                    sourceTitle: document.title,
+                    timestampMs: Date.now(),
+                });
             },
             () => context.subtitleController.subtitles.length === 0,
             true

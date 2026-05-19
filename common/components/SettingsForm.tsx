@@ -433,7 +433,7 @@ export default function SettingsForm({
                 />
                 <Tab
                     tabIndex={5 + Number(supportsDictionary) + Number(extensionSupportsAppIntegration)}
-                    label="AI / Japanese"
+                    label={t('settings.llm')}
                     id="llm-settings"
                 />
                 <Tab
