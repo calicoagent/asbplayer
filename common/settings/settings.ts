@@ -528,6 +528,7 @@ export interface KeyBindSet {
     readonly markHoveredToken0: KeyBind;
     readonly toggleHoveredTokenIgnored: KeyBind;
     readonly openStatistics: KeyBind;
+    readonly explainSubtitleWithLlm: KeyBind;
 
     // Bound from Chrome if extension is installed
     readonly copySubtitle: KeyBind;
@@ -542,6 +543,38 @@ export interface WebSocketClientSettings {
     readonly webSocketServerUrl: string;
     readonly webSocketClientEnabled: boolean;
 }
+
+export enum LlmObsidianNoteMode {
+    notePerPhrase = 'notePerPhrase',
+    dailyNoteAppend = 'dailyNoteAppend',
+    singleRollingNote = 'singleRollingNote',
+}
+
+export interface LlmSettings {
+    readonly llmEnabled: boolean;
+    readonly llmOpenRouterApiKey: string;
+    readonly llmOpenRouterModel: string;
+    readonly llmSystemPrompt: string;
+    readonly llmUserPromptTemplate: string;
+    readonly llmObsidianRestUrl: string;
+    readonly llmObsidianApiKey: string;
+    readonly llmObsidianVault: string;
+    readonly llmObsidianNoteMode: LlmObsidianNoteMode;
+    readonly llmObsidianPathTemplate: string;
+}
+
+export const llmSettingsKeys: (keyof LlmSettings)[] = [
+    'llmEnabled',
+    'llmOpenRouterApiKey',
+    'llmOpenRouterModel',
+    'llmSystemPrompt',
+    'llmUserPromptTemplate',
+    'llmObsidianRestUrl',
+    'llmObsidianApiKey',
+    'llmObsidianVault',
+    'llmObsidianNoteMode',
+    'llmObsidianPathTemplate',
+];
 
 export type ChromeBoundKeyBindName = 'copySubtitle' | 'ankiExport' | 'updateLastCard' | 'exportCard' | 'takeScreenshot';
 export type SubtitleAlignment = 'top' | 'bottom';
@@ -633,7 +666,8 @@ export interface AsbplayerSettings
         SubtitleSettings,
         DictionarySettings,
         StreamingVideoSettings,
-        WebSocketClientSettings {
+        WebSocketClientSettings,
+        LlmSettings {
     readonly subtitlePreview: string;
 }
 

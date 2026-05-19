@@ -5,6 +5,7 @@ import {
     AsbplayerSettings,
     CustomAnkiFieldSettings,
     KeyBindName,
+    LlmObsidianNoteMode,
     SubtitleListPreference,
     SubtitleSettings,
     TextSubtitleSettings,
@@ -170,6 +171,7 @@ export const defaultSettings: AsbplayerSettings = {
         markHoveredToken0: { keys: 'Q+0' },
         toggleHoveredTokenIgnored: { keys: 'Q+I' },
         openStatistics: { keys: 'Q+S' },
+        explainSubtitleWithLlm: { keys: isMacOs ? '⇧+⌃+L' : 'ctrl+shift+L' },
     },
     recordWithAudioPlayback: true,
     preferMp3: true,
@@ -237,6 +239,22 @@ export const defaultSettings: AsbplayerSettings = {
     pauseOnHoverMode: 0,
     lastSelectedAnkiExportMode: 'default',
     dictionaryTracks: [defaultDictionaryTrackSettings, defaultDictionaryTrackSettings, defaultDictionaryTrackSettings],
+    llmEnabled: false,
+    llmOpenRouterApiKey: '',
+    llmOpenRouterModel: 'anthropic/claude-sonnet-4.7',
+    llmSystemPrompt:
+        'You are a Japanese language tutor helping an intermediate learner. ' +
+        'Given a Japanese subtitle line (and optional surrounding context), extract the most useful learning targets: ' +
+        'difficult vocabulary, grammar patterns, idioms, and culturally loaded phrases. ' +
+        'For each, give a concise explanation in English plus a natural English translation. ' +
+        'Return ONLY JSON matching the provided schema. Do not invent words not present in the input.',
+    llmUserPromptTemplate:
+        'Subtitle: {{subtitle}}\n\nSurrounding context (for disambiguation only, do not extract from here): {{context}}',
+    llmObsidianRestUrl: 'https://127.0.0.1:27124',
+    llmObsidianApiKey: '',
+    llmObsidianVault: '',
+    llmObsidianNoteMode: LlmObsidianNoteMode.notePerPhrase,
+    llmObsidianPathTemplate: 'asbplayer/{{date}}-{{slug}}.md',
 };
 
 export const NUM_DICTIONARY_TRACKS = defaultSettings.dictionaryTracks.length;

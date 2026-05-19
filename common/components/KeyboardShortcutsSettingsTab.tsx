@@ -502,6 +502,10 @@ const KeyboardShortcutsSettingsTab: React.FC<Props> = ({
                 label: t('binds.openStatistics')!,
                 boundViaBrowser: false,
             },
+            explainSubtitleWithLlm: {
+                label: 'Explain current subtitle with LLM',
+                boundViaBrowser: false,
+            },
         }),
         [
             t,

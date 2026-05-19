@@ -21,6 +21,7 @@ import SubtitleAppearanceSettingsTab from './SubtitleAppearanceSettingsTab';
 import KeyboardShortcutsSettingsTab from './KeyboardShortcutsSettingsTab';
 import StreamingVideoSettingsTab from './StreamingVideoSettingsTab';
 import MiscSettingsTab from './MiscSettingsTab';
+import LlmSettingsTab from './LlmSettingsTab';
 import { DictionaryProvider } from '../dictionary-db';
 import TutorialBubble, { type TutorialBubbleProps } from './TutorialBubble';
 
@@ -281,6 +282,7 @@ export default function SettingsForm({
             'annotation',
             'streaming-video',
             'misc-settings',
+            'llm-settings',
             'about',
         ];
 
@@ -431,6 +433,11 @@ export default function SettingsForm({
                 />
                 <Tab
                     tabIndex={5 + Number(supportsDictionary) + Number(extensionSupportsAppIntegration)}
+                    label="AI / Japanese"
+                    id="llm-settings"
+                />
+                <Tab
+                    tabIndex={6 + Number(supportsDictionary) + Number(extensionSupportsAppIntegration)}
                     label={t('about.title')}
                     id="about"
                 />
@@ -538,6 +545,9 @@ export default function SettingsForm({
                     extensionSupportsSeekableTrackSetting={extensionSupportsSeekableTrackSetting}
                     extensionSupportsAutoCopyableTrackSetting={extensionSupportsAutoCopyableTrackSetting}
                 />
+            </TabPanel>
+            <TabPanel value={tabIndex} index={tabIndicesById['llm-settings']} tabsOrientation={tabsOrientation}>
+                <LlmSettingsTab settings={settings} onSettingChanged={handleSettingChanged} />
             </TabPanel>
             <TabPanel value={tabIndex} index={tabIndicesById['about']} tabsOrientation={tabsOrientation}>
                 <About

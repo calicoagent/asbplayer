@@ -313,6 +313,14 @@ export default class AppKeyBinder implements KeyBinder {
         return this.defaultKeyBinder.bindOpenStatistics(onOpenStatistics, disabledGetter, useCapture);
     }
 
+    bindExplainSubtitleWithLlm(
+        onExplainSubtitleWithLlm: (event: KeyboardEvent) => void,
+        disabledGetter: () => boolean,
+        useCapture?: boolean | undefined
+    ): () => void {
+        return this.defaultKeyBinder.bindExplainSubtitleWithLlm(onExplainSubtitleWithLlm, disabledGetter, useCapture);
+    }
+
     bindPlay(
         onPlay: (event: KeyboardEvent) => void,
         disabledGetter: () => boolean,

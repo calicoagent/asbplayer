@@ -104,6 +104,31 @@ export interface HttpPostMessage extends MessageWithId {
     readonly body: any;
 }
 
+export interface LlmPhraseExplanation {
+    readonly phrase: string;
+    readonly reading?: string;
+    readonly meaning_en: string;
+    readonly grammar_notes?: string;
+    readonly example_translation?: string;
+}
+
+export interface ExplainSubtitleWithLlmMessage extends Message {
+    readonly command: 'explain-subtitle-with-llm';
+    readonly subtitle: string;
+    readonly context?: string;
+    readonly sourceUrl?: string;
+    readonly sourceTitle?: string;
+    readonly timestampMs?: number;
+}
+
+export interface ExplainSubtitleWithLlmResponse {
+    readonly ok: boolean;
+    readonly error?: string;
+    readonly savedCount?: number;
+    readonly skippedCount?: number;
+    readonly explanations?: LlmPhraseExplanation[];
+}
+
 export interface EncodeMp3Message extends MessageWithId {
     readonly command: 'encode-mp3';
     readonly messageId: string;

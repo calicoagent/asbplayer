@@ -172,7 +172,7 @@ export default defineConfig({
             };
         }
 
-        let permissions = ['tabs', 'storage', 'unlimitedStorage'];
+        let permissions = ['tabs', 'storage', 'unlimitedStorage', 'notifications'];
 
         if (browser === 'chrome') {
             permissions = [...permissions, 'tabCapture', 'activeTab', 'contextMenus', 'sidePanel', 'offscreen'];

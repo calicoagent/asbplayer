@@ -1,4 +1,6 @@
 import {
+    ExplainSubtitleWithLlmMessage,
+    ExplainSubtitleWithLlmResponse,
     OpenStatisticsMessage,
     PlayMode,
     SettingsUpdatedMessage,
@@ -37,6 +39,7 @@ export default class KeyBindings {
     private _unbindMarkHoveredToken?: Unbinder = false;
     private _unbindToggleHoveredTokenIgnored?: Unbinder = false;
     private _unbindOpenStatistics?: Unbinder = false;
+    private _unbindExplainSubtitleWithLlm?: Unbinder = false;
 
     private _bound: boolean;
 
@@ -257,6 +260,52 @@ export default class KeyBindings {
                 browser.runtime.sendMessage(command);
             },
             () => false,
+            true
+        );
+
+        this._unbindExplainSubtitleWithLlm = this._keyBinder.bindExplainSubtitleWithLlm(
+            (event) => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                const [currentSubtitle, surroundingSubtitles] = context.subtitleController.currentSubtitle();
+                if (!currentSubtitle) {
+                    return;
+                }
+
+                const ctxText = (surroundingSubtitles ?? [])
+                    .filter((s) => s.text !== currentSubtitle.text)
+                    .map((s) => s.text)
+                    .join(' ⏎ ');
+
+                const command: VideoToExtensionCommand<ExplainSubtitleWithLlmMessage> = {
+                    sender: 'asbplayer-video',
+                    message: {
+                        command: 'explain-subtitle-with-llm',
+                        subtitle: currentSubtitle.text,
+                        context: ctxText,
+                        sourceUrl: window.location.href,
+                        sourceTitle: document.title,
+                        timestampMs: Date.now(),
+                    },
+                    src: context.video.src,
+                };
+
+                browser.runtime
+                    .sendMessage(command)
+                    .then((res: ExplainSubtitleWithLlmResponse | undefined) => {
+                        if (!res) return;
+                        if (res.ok) {
+                            console.info(
+                                `[asbplayer-llm] saved ${res.savedCount} / skipped ${res.skippedCount} phrase(s)`
+                            );
+                        } else {
+                            console.error('[asbplayer-llm]', res.error);
+                        }
+                    })
+                    .catch((e) => console.error('[asbplayer-llm]', e));
+            },
+            () => context.subtitleController.subtitles.length === 0,
             true
         );
 
@@ -491,6 +540,11 @@ export default class KeyBindings {
         if (this._unbindOpenStatistics) {
             this._unbindOpenStatistics();
             this._unbindOpenStatistics = false;
+        }
+
+        if (this._unbindExplainSubtitleWithLlm) {
+            this._unbindExplainSubtitleWithLlm();
+            this._unbindExplainSubtitleWithLlm = false;
         }
 
         this._bound = false;
