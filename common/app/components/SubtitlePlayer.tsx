@@ -26,7 +26,10 @@ import { SubtitleAnnotations } from '@project/common/subtitle-annotations';
 import { KeyBinder } from '@project/common/key-binder';
 import SubtitleTextImage from '@project/common/components/SubtitleTextImage';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import IconButton from '@mui/material/IconButton';
+import CircularProgress from '@mui/material/CircularProgress';
+import { LlmPhraseExplanation } from '@project/common';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -204,10 +207,43 @@ const useSubtitleRowStyles = makeStyles<Theme>((theme) => ({
         textAlign: 'right',
         padding: 0,
     },
+    explanationRow: {
+        backgroundColor: theme.palette.action.selected,
+    },
+    explanationCell: {
+        paddingLeft: 16,
+        paddingTop: 8,
+        paddingBottom: 12,
+        fontSize: 13,
+        color: theme.palette.text.secondary,
+    },
+    explanationPhrase: {
+        color: theme.palette.text.primary,
+        fontWeight: 600,
+        fontSize: 14,
+    },
+    explanationError: {
+        color: theme.palette.error.main,
+    },
+    explanationStatus: {
+        marginTop: 6,
+        fontSize: 11,
+        color: theme.palette.text.disabled,
+        fontStyle: 'italic',
+    },
 }));
 
 export interface DisplaySubtitleModel extends RichSubtitleModel {
     displayTime: string;
+}
+
+export interface LlmRowState {
+    loading: boolean;
+    explanations?: LlmPhraseExplanation[];
+    error?: string;
+    savedCount?: number;
+    skippedCount?: number;
+    model?: string;
 }
 
 enum SelectionState {
@@ -228,6 +264,9 @@ interface SubtitleRowProps extends TableRowProps {
     onMouseOver: (e: React.MouseEvent) => void;
     onMouseOut: (e: React.MouseEvent) => void;
     subtitleHtml: SubtitleHtml;
+    llmEnabled?: boolean;
+    llmLoading?: boolean;
+    onExplainSubtitle?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, index: number) => void;
 }
 
 const SubtitleRow = React.memo(function SubtitleRow({
@@ -243,6 +282,9 @@ const SubtitleRow = React.memo(function SubtitleRow({
     subtitle,
     showCopyButton,
     subtitleHtml,
+    llmEnabled,
+    llmLoading,
+    onExplainSubtitle,
 }: SubtitleRowProps) {
     const classes = useSubtitleRowStyles();
     const textRef = useRef<HTMLSpanElement>(null);
@@ -311,11 +353,79 @@ const SubtitleRow = React.memo(function SubtitleRow({
                     </IconButton>
                 </TableCell>
             )}
+            {llmEnabled && (
+                <TableCell className={classes.copyButton}>
+                    <IconButton
+                        disabled={selectionState !== undefined || llmLoading}
+                        onClick={(e) => onExplainSubtitle?.(e, index)}
+                    >
+                        {llmLoading ? (
+                            <CircularProgress size={compressed ? 16 : 20} />
+                        ) : (
+                            <AutoAwesomeIcon fontSize={compressed ? 'small' : 'medium'} />
+                        )}
+                    </IconButton>
+                </TableCell>
+            )}
             <TableCell className={classes.timestamp}>
                 <div>
                     <span style={{ display: 'none' }}>.</span>
                     {`\n${subtitle.displayTime}\n`}
                     <span style={{ display: 'none' }}>.</span>
+                </div>
+            </TableCell>
+        </TableRow>
+    );
+});
+
+interface SubtitleExplanationRowProps {
+    state: LlmRowState;
+    columnSpan: number;
+}
+
+const SubtitleExplanationRow = React.memo(function SubtitleExplanationRow({
+    state,
+    columnSpan,
+}: SubtitleExplanationRowProps) {
+    const classes = useSubtitleRowStyles();
+    if (state.error) {
+        return (
+            <TableRow className={classes.explanationRow}>
+                <TableCell className={`${classes.explanationCell} ${classes.explanationError}`} colSpan={columnSpan}>
+                    {state.error}
+                </TableCell>
+            </TableRow>
+        );
+    }
+    const explanations = state.explanations ?? [];
+    if (explanations.length === 0) {
+        return (
+            <TableRow className={classes.explanationRow}>
+                <TableCell className={classes.explanationCell} colSpan={columnSpan}>
+                    No phrases returned.
+                </TableCell>
+            </TableRow>
+        );
+    }
+    return (
+        <TableRow className={classes.explanationRow}>
+            <TableCell className={classes.explanationCell} colSpan={columnSpan}>
+                {explanations.map((exp, i) => (
+                    <div key={i} style={{ marginBottom: 8 }}>
+                        <span className={classes.explanationPhrase}>{exp.phrase}</span>
+                        {exp.reading && <span style={{ marginLeft: 6, opacity: 0.7 }}>({exp.reading})</span>}
+                        <div>{exp.meaning_en}</div>
+                        {exp.grammar_notes && <div style={{ opacity: 0.85 }}>{exp.grammar_notes}</div>}
+                        {exp.example_translation && (
+                            <div style={{ fontStyle: 'italic', opacity: 0.85 }}>{exp.example_translation}</div>
+                        )}
+                    </div>
+                ))}
+                <div className={classes.explanationStatus}>
+                    {state.savedCount !== undefined
+                        ? `Saved ${state.savedCount}${state.skippedCount ? `, skipped ${state.skippedCount}` : ''} to Obsidian`
+                        : ''}
+                    {state.model ? ` · ${state.model}` : ''}
                 </div>
             </TableCell>
         </TableRow>
@@ -455,6 +565,7 @@ export default function SubtitlePlayer({
     const highlightedSubtitleIndexesRef = useRef<{ [index: number]: boolean }>({});
     const [selectedSubtitleIndexes, setSelectedSubtitleIndexes] = useState<boolean[]>();
     const [highlightedJumpToSubtitleIndex, setHighlightedJumpToSubtitleIndex] = useState<number>();
+    const [llmStates, setLlmStates] = useState<Record<number, LlmRowState>>({});
     const lengthRef = useRef<number>(0);
     lengthRef.current = length;
     const hiddenRef = useRef<boolean>(false);
@@ -996,6 +1107,84 @@ export default function SubtitlePlayer({
         );
     }, []);
 
+    const handleExplainSubtitle = useCallback(
+        async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, index: number) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const list = subtitleListRef.current;
+            if (!list) return;
+            const subtitle = list[index];
+            if (!subtitle) return;
+
+            const surrounding = calculateSurroundingSubtitlesForIndexRef.current(index);
+            const ctxText = surrounding
+                .filter((s) => s.text !== subtitle.text)
+                .map((s) => s.text)
+                .join(' ⏎ ');
+
+            setLlmStates((prev) => ({ ...prev, [index]: { loading: true } }));
+
+            const timestampMs = Date.now();
+            const sourceUrl = window.location.href;
+            const sourceTitle = document.title;
+
+            try {
+                const explainRes = await extension.explainSubtitleWithLlm({
+                    subtitle: subtitle.text,
+                    context: ctxText,
+                    sourceUrl,
+                    sourceTitle,
+                    timestampMs,
+                });
+                if (!explainRes?.ok) {
+                    setLlmStates((prev) => ({
+                        ...prev,
+                        [index]: { loading: false, error: explainRes?.error ?? 'Unknown error' },
+                    }));
+                    return;
+                }
+                const explanations = explainRes.explanations ?? [];
+                const model = explainRes.model ?? '';
+
+                if (explanations.length === 0) {
+                    setLlmStates((prev) => ({
+                        ...prev,
+                        [index]: { loading: false, explanations, model, savedCount: 0 },
+                    }));
+                    return;
+                }
+
+                const saveRes = await extension.saveLlmExplanations({
+                    explanations,
+                    subtitle: subtitle.text,
+                    sourceUrl,
+                    sourceTitle,
+                    timestampMs,
+                    model,
+                });
+
+                setLlmStates((prev) => ({
+                    ...prev,
+                    [index]: {
+                        loading: false,
+                        explanations,
+                        model,
+                        savedCount: saveRes?.savedCount ?? 0,
+                        skippedCount: saveRes?.skippedCount ?? 0,
+                        error: saveRes?.ok ? undefined : (saveRes?.error ?? 'Save failed'),
+                    },
+                }));
+            } catch (err: any) {
+                setLlmStates((prev) => ({
+                    ...prev,
+                    [index]: { loading: false, error: err?.message ?? String(err) },
+                }));
+            }
+        },
+        [extension]
+    );
+
     const resizeHandleRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -1161,22 +1350,35 @@ export default function SubtitlePlayer({
                                         : SelectionState.outsideSelection;
                             }
 
+                            const llmState = llmStates[index];
                             return (
-                                <SubtitleRow
-                                    key={index}
-                                    index={index}
-                                    compressed={compressed}
-                                    selectionState={selectionState}
-                                    showCopyButton={showCopyButton}
-                                    disabled={disabledSubtitleTracks[s.track]}
-                                    subtitle={subtitles[index]}
-                                    subtitleRef={subtitleRefs[index]}
-                                    onClickSubtitle={handleClick}
-                                    onCopySubtitle={handleCopy}
-                                    onMouseOver={onMouseOver}
-                                    onMouseOut={onMouseOut}
-                                    subtitleHtml={settings.subtitleHtml}
-                                />
+                                <React.Fragment key={index}>
+                                    <SubtitleRow
+                                        index={index}
+                                        compressed={compressed}
+                                        selectionState={selectionState}
+                                        showCopyButton={showCopyButton}
+                                        disabled={disabledSubtitleTracks[s.track]}
+                                        subtitle={subtitles[index]}
+                                        subtitleRef={subtitleRefs[index]}
+                                        onClickSubtitle={handleClick}
+                                        onCopySubtitle={handleCopy}
+                                        onMouseOver={onMouseOver}
+                                        onMouseOut={onMouseOut}
+                                        subtitleHtml={settings.subtitleHtml}
+                                        llmEnabled={settings.llmEnabled}
+                                        llmLoading={llmState?.loading}
+                                        onExplainSubtitle={handleExplainSubtitle}
+                                    />
+                                    {llmState && !llmState.loading && (
+                                        <SubtitleExplanationRow
+                                            state={llmState}
+                                            columnSpan={
+                                                1 + (showCopyButton ? 1 : 0) + (settings.llmEnabled ? 1 : 0) + 1
+                                            }
+                                        />
+                                    )}
+                                </React.Fragment>
                             );
                         })}
                     </TableBody>

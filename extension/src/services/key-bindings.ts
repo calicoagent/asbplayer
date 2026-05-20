@@ -37,7 +37,6 @@ export default class KeyBindings {
     private _unbindMarkHoveredToken?: Unbinder = false;
     private _unbindToggleHoveredTokenIgnored?: Unbinder = false;
     private _unbindOpenStatistics?: Unbinder = false;
-    private _unbindExplainSubtitleWithLlm?: Unbinder = false;
 
     private _bound: boolean;
 
@@ -258,33 +257,6 @@ export default class KeyBindings {
                 browser.runtime.sendMessage(command);
             },
             () => false,
-            true
-        );
-
-        this._unbindExplainSubtitleWithLlm = this._keyBinder.bindExplainSubtitleWithLlm(
-            (event) => {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-
-                const [currentSubtitle, surroundingSubtitles] = context.subtitleController.currentSubtitle();
-                if (!currentSubtitle) {
-                    return;
-                }
-
-                const ctxText = (surroundingSubtitles ?? [])
-                    .filter((s) => s.text !== currentSubtitle.text)
-                    .map((s) => s.text)
-                    .join(' ⏎ ');
-
-                void context.llmExplanationUiController.show({
-                    subtitle: currentSubtitle.text,
-                    context: ctxText,
-                    sourceUrl: window.location.href,
-                    sourceTitle: document.title,
-                    timestampMs: Date.now(),
-                });
-            },
-            () => context.subtitleController.subtitles.length === 0,
             true
         );
 
@@ -519,11 +491,6 @@ export default class KeyBindings {
         if (this._unbindOpenStatistics) {
             this._unbindOpenStatistics();
             this._unbindOpenStatistics = false;
-        }
-
-        if (this._unbindExplainSubtitleWithLlm) {
-            this._unbindExplainSubtitleWithLlm();
-            this._unbindExplainSubtitleWithLlm = false;
         }
 
         this._bound = false;

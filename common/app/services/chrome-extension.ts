@@ -53,6 +53,11 @@ import {
     SidePanelLocation,
     AckTabsMessage,
     BrowserFeatures,
+    ExplainSubtitleWithLlmMessage,
+    ExplainSubtitleWithLlmResponse,
+    SaveLlmExplanationsMessage,
+    SaveLlmExplanationsResponse,
+    LlmPhraseExplanation,
 } from '@project/common';
 import { DictionaryStatisticsSnapshot } from '@project/common/dictionary-statistics';
 import {
@@ -943,6 +948,56 @@ export default class ChromeExtension {
                 }
             }, timeout);
         });
+    }
+
+    explainSubtitleWithLlm(args: {
+        subtitle: string;
+        context?: string;
+        sourceUrl?: string;
+        sourceTitle?: string;
+        timestampMs?: number;
+    }): Promise<ExplainSubtitleWithLlmResponse> {
+        const messageId = uuidv4();
+        const command: AsbPlayerCommand<ExplainSubtitleWithLlmMessage> = {
+            sender: 'asbplayerv2',
+            message: {
+                command: 'explain-subtitle-with-llm',
+                messageId,
+                subtitle: args.subtitle,
+                context: args.context,
+                sourceUrl: args.sourceUrl,
+                sourceTitle: args.sourceTitle,
+                timestampMs: args.timestampMs,
+            },
+        };
+        window.postMessage(command);
+        return this._createResponsePromise(messageId) as Promise<ExplainSubtitleWithLlmResponse>;
+    }
+
+    saveLlmExplanations(args: {
+        explanations: LlmPhraseExplanation[];
+        subtitle: string;
+        sourceUrl?: string;
+        sourceTitle?: string;
+        timestampMs?: number;
+        model: string;
+    }): Promise<SaveLlmExplanationsResponse> {
+        const messageId = uuidv4();
+        const command: AsbPlayerCommand<SaveLlmExplanationsMessage> = {
+            sender: 'asbplayerv2',
+            message: {
+                command: 'save-llm-explanations',
+                messageId,
+                explanations: args.explanations,
+                subtitle: args.subtitle,
+                sourceUrl: args.sourceUrl,
+                sourceTitle: args.sourceTitle,
+                timestampMs: args.timestampMs,
+                model: args.model,
+            },
+        };
+        window.postMessage(command);
+        return this._createResponsePromise(messageId) as Promise<SaveLlmExplanationsResponse>;
     }
 
     subscribeTabs(callback: (tabs: VideoTabModel[]) => void) {

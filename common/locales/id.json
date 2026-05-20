@@ -159,8 +159,7 @@
     "moveTopSubtitlesDown": "Turunkan subtitle atas",
     "markHoveredToken": "Tandai kata yang disorot sebagai {{tokenStatus}}",
     "toggleHoveredTokenIgnored": "Toggle \"abaikan\" untuk kata (hover)",
-    "openStatistics": "Buka statistik",
-    "explainSubtitleWithLlm": "Explain current subtitle with LLM"
+    "openStatistics": "Buka statistik"
   },
   "controls": {
     "autoPauseMode": "Jeda Otomatis",

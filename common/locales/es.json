@@ -159,8 +159,7 @@
     "moveTopSubtitlesDown": "Mover subtítulos de arriba hacia abajo",
     "markHoveredToken": "Marcar la palabra bajo el cursor como {{tokenStatus}}",
     "toggleHoveredTokenIgnored": "Marcar como ignorada la palabra bajo el cursor",
-    "openStatistics": "Abrir estadísticas",
-    "explainSubtitleWithLlm": "Explain current subtitle with LLM"
+    "openStatistics": "Abrir estadísticas"
   },
   "controls": {
     "autoPauseMode": "Pausado Automático",

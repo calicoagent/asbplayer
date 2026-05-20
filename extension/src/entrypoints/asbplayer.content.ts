@@ -306,6 +306,13 @@ export default defineContentScript({
                             messageId: command.message.messageId,
                         });
                         break;
+                    case 'explain-subtitle-with-llm':
+                    case 'save-llm-explanations':
+                        sendMessageToPlayer({
+                            response: await browser.runtime.sendMessage(command),
+                            messageId: command.message.messageId,
+                        });
+                        break;
                     default:
                         browser.runtime.sendMessage(command);
                         break;

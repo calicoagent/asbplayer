@@ -171,7 +171,6 @@ export const defaultSettings: AsbplayerSettings = {
         markHoveredToken0: { keys: 'Q+0' },
         toggleHoveredTokenIgnored: { keys: 'Q+I' },
         openStatistics: { keys: 'Q+S' },
-        explainSubtitleWithLlm: { keys: isMacOs ? '⇧+⌃+L' : 'ctrl+shift+L' },
     },
     recordWithAudioPlayback: true,
     preferMp3: true,

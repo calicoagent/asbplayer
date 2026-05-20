@@ -80,7 +80,6 @@ import DragController from '../controllers/drag-controller';
 import { MobileGestureController } from '../controllers/mobile-gesture-controller';
 import { MobileVideoOverlayController } from '../controllers/mobile-video-overlay-controller';
 import NotificationController from '../controllers/notification-controller';
-import LlmExplanationUiController from '../controllers/llm-explanation-ui-controller';
 import SubtitleController from '../controllers/subtitle-controller';
 import BulkExportController from '../controllers/bulk-export-controller';
 import VideoDataSyncController from '../controllers/video-data-sync-controller';
@@ -162,7 +161,6 @@ export default class Binding {
     readonly dragController: DragController;
     readonly ankiUiController: AnkiUiController;
     readonly notificationController: NotificationController;
-    readonly llmExplanationUiController: LlmExplanationUiController;
     readonly mobileVideoOverlayController: MobileVideoOverlayController;
     readonly mobileGestureController: MobileGestureController;
     readonly keyBindings: KeyBindings;
@@ -226,7 +224,6 @@ export default class Binding {
         this.keyBindings = new KeyBindings();
         this.ankiUiController = new AnkiUiController();
         this.notificationController = new NotificationController(this);
-        this.llmExplanationUiController = new LlmExplanationUiController(this);
         this.mobileVideoOverlayController = new MobileVideoOverlayController(this, OffsetAnchor.top);
         this.subtitleController.onOffsetChange = () => this.mobileVideoOverlayController.updateModel();
         this.mobileGestureController = new MobileGestureController(this);
@@ -1212,7 +1209,6 @@ export default class Binding {
         this.mobileVideoOverlayController.unbind();
         this.mobileGestureController.unbind();
         this.notificationController.unbind();
-        this.llmExplanationUiController.unbind();
         this.bulkExportController.unbind();
         this.subscribed = false;
 

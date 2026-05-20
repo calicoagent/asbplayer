@@ -159,8 +159,7 @@
     "moveTopSubtitlesDown": "Move top subtitles down",
     "markHoveredToken": "Mark hovered word as {{tokenStatus}}",
     "toggleHoveredTokenIgnored": "Toggle hovered word as ignored",
-    "openStatistics": "Open statistics",
-    "explainSubtitleWithLlm": "Explain current subtitle with LLM"
+    "openStatistics": "Open statistics"
   },
   "controls": {
     "autoPauseMode": "Pausa automática",

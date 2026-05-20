@@ -189,11 +189,6 @@ export interface KeyBinder {
         disabledGetter: () => boolean,
         capture?: boolean
     ): () => void;
-    bindExplainSubtitleWithLlm(
-        onExplainSubtitleWithLlm: (event: KeyboardEvent) => void,
-        disabledGetter: () => boolean,
-        capture?: boolean
-    ): () => void;
 }
 
 export class DefaultKeyBinder implements KeyBinder {
@@ -1058,28 +1053,6 @@ export class DefaultKeyBinder implements KeyBinder {
             }
 
             onOpenStatistics(event);
-            return true;
-        };
-        return this._bind(shortcut, capture, handler);
-    }
-
-    bindExplainSubtitleWithLlm(
-        onExplainSubtitleWithLlm: (event: KeyboardEvent) => void,
-        disabledGetter: () => boolean,
-        capture = false
-    ) {
-        const shortcut = this.keyBindSet.explainSubtitleWithLlm.keys;
-
-        if (!shortcut) {
-            return () => {};
-        }
-
-        const handler = (event: KeyboardEvent) => {
-            if (disabledGetter()) {
-                return false;
-            }
-
-            onExplainSubtitleWithLlm(event);
             return true;
         };
         return this._bind(shortcut, capture, handler);

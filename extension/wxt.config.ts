@@ -114,7 +114,6 @@ export default defineConfig({
                         'video-data-sync-ui.js',
                         'video-select-ui.js',
                         'notification-ui.js',
-                        'llm-explanation-ui.js',
                         'mobile-video-overlay-ui.html',
                         'statistics-overlay-ui.html',
                         'statistics-overlay-one-uncollected-ui.html',
@@ -173,7 +172,7 @@ export default defineConfig({
             };
         }
 
-        let permissions = ['tabs', 'storage', 'unlimitedStorage', 'notifications'];
+        let permissions = ['tabs', 'storage', 'unlimitedStorage'];
 
         if (browser === 'chrome') {
             permissions = [...permissions, 'tabCapture', 'activeTab', 'contextMenus', 'sidePanel', 'offscreen'];

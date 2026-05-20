@@ -159,8 +159,7 @@
     "moveTopSubtitlesDown": "顶部字幕下移",
     "markHoveredToken": "将悬停词汇标记为：{{tokenStatus}}",
     "toggleHoveredTokenIgnored": "忽略 / 取消忽略悬停词汇",
-    "openStatistics": "打开数据统计",
-    "explainSubtitleWithLlm": "Explain current subtitle with LLM"
+    "openStatistics": "打开数据统计"
   },
   "controls": {
     "autoPauseMode": "自动暂停",

@@ -10,7 +10,7 @@ export default class SaveLlmExplanationsHandler {
     }
 
     get sender() {
-        return ['asbplayer-video', 'asbplayer-video-tab'];
+        return ['asbplayer-video', 'asbplayer-video-tab', 'asbplayerv2'];
     }
 
     get command() {

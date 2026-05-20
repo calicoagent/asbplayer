@@ -112,8 +112,9 @@ export interface LlmPhraseExplanation {
     readonly example_translation?: string;
 }
 
-export interface ExplainSubtitleWithLlmMessage extends Message {
+export interface ExplainSubtitleWithLlmMessage extends MessageWithId {
     readonly command: 'explain-subtitle-with-llm';
+    readonly messageId: string;
     readonly subtitle: string;
     readonly context?: string;
     readonly sourceUrl?: string;
@@ -128,8 +129,9 @@ export interface ExplainSubtitleWithLlmResponse {
     readonly model?: string;
 }
 
-export interface SaveLlmExplanationsMessage extends Message {
+export interface SaveLlmExplanationsMessage extends MessageWithId {
     readonly command: 'save-llm-explanations';
+    readonly messageId: string;
     readonly explanations: LlmPhraseExplanation[];
     readonly subtitle: string;
     readonly sourceUrl?: string;
@@ -144,41 +146,6 @@ export interface SaveLlmExplanationsResponse {
     readonly savedCount?: number;
     readonly skippedCount?: number;
     readonly errors?: string[];
-}
-
-export interface LlmExplanationUiState {
-    readonly themeType: 'dark' | 'light';
-    readonly subtitle: string;
-    readonly context: string;
-    readonly sourceTitle?: string;
-    readonly sourceUrl?: string;
-    readonly timestampMs?: number;
-    readonly model: string;
-    readonly loading: boolean;
-    readonly error?: string;
-    readonly explanations: LlmPhraseExplanation[];
-    readonly saving: boolean;
-    readonly savedCount?: number;
-    readonly errors?: string[];
-}
-
-export interface ShowLlmExplanationUiMessage extends Message {
-    readonly command: 'showLlmExplanationUi';
-    readonly state: LlmExplanationUiState;
-}
-
-export interface UpdateLlmExplanationUiStateMessage extends Message {
-    readonly command: 'updateLlmExplanationUiState';
-    readonly state: Partial<LlmExplanationUiState>;
-}
-
-export interface LlmExplanationUiBridgeSaveMessage extends Message {
-    readonly command: 'llm-explanation-save';
-    readonly explanations: LlmPhraseExplanation[];
-}
-
-export interface LlmExplanationUiBridgeCloseMessage extends Message {
-    readonly command: 'llm-explanation-close';
 }
 
 export interface EncodeMp3Message extends MessageWithId {

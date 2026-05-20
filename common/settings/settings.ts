@@ -528,7 +528,6 @@ export interface KeyBindSet {
     readonly markHoveredToken0: KeyBind;
     readonly toggleHoveredTokenIgnored: KeyBind;
     readonly openStatistics: KeyBind;
-    readonly explainSubtitleWithLlm: KeyBind;
 
     // Bound from Chrome if extension is installed
     readonly copySubtitle: KeyBind;
