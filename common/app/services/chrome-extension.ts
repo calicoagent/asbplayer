@@ -971,7 +971,7 @@ export default class ChromeExtension {
             },
         };
         window.postMessage(command);
-        return this._createResponsePromise(messageId) as Promise<ExplainSubtitleWithLlmResponse>;
+        return this._createResponsePromise(messageId, 90000) as Promise<ExplainSubtitleWithLlmResponse>;
     }
 
     saveLlmExplanations(args: {
@@ -997,7 +997,7 @@ export default class ChromeExtension {
             },
         };
         window.postMessage(command);
-        return this._createResponsePromise(messageId) as Promise<SaveLlmExplanationsResponse>;
+        return this._createResponsePromise(messageId, 60000) as Promise<SaveLlmExplanationsResponse>;
     }
 
     subscribeTabs(callback: (tabs: VideoTabModel[]) => void) {

@@ -240,7 +240,7 @@ export const defaultSettings: AsbplayerSettings = {
     dictionaryTracks: [defaultDictionaryTrackSettings, defaultDictionaryTrackSettings, defaultDictionaryTrackSettings],
     llmEnabled: false,
     llmOpenRouterApiKey: '',
-    llmOpenRouterModel: 'anthropic/claude-sonnet-4.7',
+    llmOpenRouterModel: 'anthropic/claude-sonnet-4.6',
     llmSystemPrompt:
         'You are a Japanese language tutor helping an intermediate learner. ' +
         'Given a Japanese subtitle line (and optional surrounding context), extract the most useful learning targets: ' +

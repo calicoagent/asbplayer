@@ -174,6 +174,8 @@ export default defineBackground(() => {
     const dictionaryDB = new DictionaryDB(settings);
 
     const handlers: CommandHandler[] = [
+        new ExplainSubtitleWithLlmHandler(settings),
+        new SaveLlmExplanationsHandler(settings),
         new VideoHeartbeatHandler(tabRegistry),
         new RecordMediaHandler(audioRecorder, imageCapturer, cardPublisher, settings),
         new RerecordMediaHandler(settings, audioRecorder, cardPublisher),
@@ -225,8 +227,6 @@ export default defineBackground(() => {
         new CurrentTabHandler(),
         new MobileOverlayForwarderHandler(),
         new StatisticsOverlayForwarderHandler(),
-        new ExplainSubtitleWithLlmHandler(settings),
-        new SaveLlmExplanationsHandler(settings),
     ];
 
     browser.runtime.onMessage.addListener((request: Command<Message>, sender, sendResponse) => {

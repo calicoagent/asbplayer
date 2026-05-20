@@ -1130,6 +1130,7 @@ export default function SubtitlePlayer({
             const sourceTitle = document.title;
 
             try {
+                console.info('[asbplayer-llm] explain request', { subtitle: subtitle.text, ctxText });
                 const explainRes = await extension.explainSubtitleWithLlm({
                     subtitle: subtitle.text,
                     context: ctxText,
@@ -1137,11 +1138,18 @@ export default function SubtitlePlayer({
                     sourceTitle,
                     timestampMs,
                 });
-                if (!explainRes?.ok) {
-                    setLlmStates((prev) => ({
-                        ...prev,
-                        [index]: { loading: false, error: explainRes?.error ?? 'Unknown error' },
-                    }));
+                console.info('[asbplayer-llm] explain response', explainRes);
+                if (!explainRes) {
+                    const msg =
+                        'No response from extension background. Check the service worker console at chrome://extensions for [asbplayer-llm] errors.';
+                    console.error('[asbplayer-llm]', msg);
+                    setLlmStates((prev) => ({ ...prev, [index]: { loading: false, error: msg } }));
+                    return;
+                }
+                if (!explainRes.ok) {
+                    const msg = explainRes.error ?? 'Background returned ok=false with no error field';
+                    console.error('[asbplayer-llm]', msg);
+                    setLlmStates((prev) => ({ ...prev, [index]: { loading: false, error: msg } }));
                     return;
                 }
                 const explanations = explainRes.explanations ?? [];
@@ -1163,6 +1171,7 @@ export default function SubtitlePlayer({
                     timestampMs,
                     model,
                 });
+                console.info('[asbplayer-llm] save response', saveRes);
 
                 setLlmStates((prev) => ({
                     ...prev,
@@ -1176,6 +1185,7 @@ export default function SubtitlePlayer({
                     },
                 }));
             } catch (err: any) {
+                console.error('[asbplayer-llm] explain/save threw', err);
                 setLlmStates((prev) => ({
                     ...prev,
                     [index]: { loading: false, error: err?.message ?? String(err) },

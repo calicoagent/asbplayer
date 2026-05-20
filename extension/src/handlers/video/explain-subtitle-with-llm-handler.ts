@@ -23,10 +23,21 @@ export default class ExplainSubtitleWithLlmHandler {
         sendResponse: (response?: ExplainSubtitleWithLlmResponse) => void
     ): boolean {
         const message = command.message as ExplainSubtitleWithLlmMessage;
+        console.info('[asbplayer-llm] explain request', {
+            subtitle: message.subtitle.slice(0, 80),
+            sender: command.sender,
+        });
         void this._handle(message)
-            .then(sendResponse)
+            .then((res) => {
+                console.info('[asbplayer-llm] explain response', {
+                    ok: res.ok,
+                    error: res.error,
+                    count: res.explanations?.length,
+                });
+                sendResponse(res);
+            })
             .catch((e) => {
-                console.error('[asbplayer-llm]', e);
+                console.error('[asbplayer-llm] explain threw', e);
                 sendResponse({ ok: false, error: e?.message ?? String(e) });
             });
         return true;

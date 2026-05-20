@@ -23,10 +23,14 @@ export default class SaveLlmExplanationsHandler {
         sendResponse: (response?: SaveLlmExplanationsResponse) => void
     ): boolean {
         const message = command.message as SaveLlmExplanationsMessage;
+        console.info('[asbplayer-llm] save request', { count: message.explanations.length });
         void this._handle(message)
-            .then(sendResponse)
+            .then((res) => {
+                console.info('[asbplayer-llm] save response', res);
+                sendResponse(res);
+            })
             .catch((e) => {
-                console.error('[asbplayer-llm]', e);
+                console.error('[asbplayer-llm] save threw', e);
                 sendResponse({ ok: false, error: e?.message ?? String(e) });
             });
         return true;
