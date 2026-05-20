@@ -241,6 +241,7 @@ export interface LlmRowState {
     loading: boolean;
     explanations?: LlmPhraseExplanation[];
     error?: string;
+    saveWarning?: string;
     savedCount?: number;
     skippedCount?: number;
     model?: string;
@@ -388,7 +389,8 @@ const SubtitleExplanationRow = React.memo(function SubtitleExplanationRow({
     columnSpan,
 }: SubtitleExplanationRowProps) {
     const classes = useSubtitleRowStyles();
-    if (state.error) {
+    const explanations = state.explanations ?? [];
+    if (state.error && explanations.length === 0) {
         return (
             <TableRow className={classes.explanationRow}>
                 <TableCell className={`${classes.explanationCell} ${classes.explanationError}`} colSpan={columnSpan}>
@@ -397,7 +399,6 @@ const SubtitleExplanationRow = React.memo(function SubtitleExplanationRow({
             </TableRow>
         );
     }
-    const explanations = state.explanations ?? [];
     if (explanations.length === 0) {
         return (
             <TableRow className={classes.explanationRow}>
@@ -406,6 +407,12 @@ const SubtitleExplanationRow = React.memo(function SubtitleExplanationRow({
                 </TableCell>
             </TableRow>
         );
+    }
+    let saveStatus = '';
+    if (state.savedCount !== undefined) {
+        saveStatus = `Saved ${state.savedCount}${state.skippedCount ? `, skipped ${state.skippedCount}` : ''} to Obsidian`;
+    } else if (state.saveWarning) {
+        saveStatus = state.saveWarning;
     }
     return (
         <TableRow className={classes.explanationRow}>
@@ -422,9 +429,7 @@ const SubtitleExplanationRow = React.memo(function SubtitleExplanationRow({
                     </div>
                 ))}
                 <div className={classes.explanationStatus}>
-                    {state.savedCount !== undefined
-                        ? `Saved ${state.savedCount}${state.skippedCount ? `, skipped ${state.skippedCount}` : ''} to Obsidian`
-                        : ''}
+                    {saveStatus}
                     {state.model ? ` · ${state.model}` : ''}
                 </div>
             </TableCell>
@@ -1163,6 +1168,20 @@ export default function SubtitlePlayer({
                     return;
                 }
 
+                if (!settingsRef.current.llmObsidianApiKey) {
+                    console.warn('[asbplayer-llm] Obsidian API key not configured — skipping save');
+                    setLlmStates((prev) => ({
+                        ...prev,
+                        [index]: {
+                            loading: false,
+                            explanations,
+                            model,
+                            saveWarning: 'Obsidian not configured — not saved',
+                        },
+                    }));
+                    return;
+                }
+
                 const saveRes = await extension.saveLlmExplanations({
                     explanations,
                     subtitle: subtitle.text,
@@ -1181,7 +1200,7 @@ export default function SubtitlePlayer({
                         model,
                         savedCount: saveRes?.savedCount ?? 0,
                         skippedCount: saveRes?.skippedCount ?? 0,
-                        error: saveRes?.ok ? undefined : (saveRes?.error ?? 'Save failed'),
+                        saveWarning: saveRes?.ok ? undefined : (saveRes?.error ?? 'Save failed'),
                     },
                 }));
             } catch (err: any) {
